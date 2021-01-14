@@ -3,7 +3,6 @@ const Discord = require("discord.js"); // imports the discord library
 const client = new Discord.Client(); // creates a discord client
 const token = process.env.discord_token; // gets your token from the file
 const SPOTIFY_URL = 'https://open.spotify.com/album/'; // spotify album url prefix
-var mesasge;
 
 // client.once("ready", () => { // prints "Ready!" to the console once the bot is online
 // 	console.log("Ready!");

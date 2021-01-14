@@ -4,9 +4,9 @@ const client = new Discord.Client(); // creates a discord client
 const token = process.env.discord_token; // gets your token from the file
 const SPOTIFY_URL = 'https://open.spotify.com/album/'; // spotify album url prefix
 
-// client.once("ready", () => { // prints "Ready!" to the console once the bot is online
-// 	console.log("Ready!");
-// });
+client.once("ready", () => { // prints "Ready!" to the console once the bot is online
+	console.log("Ready!");
+});
 
 client.login(token); // starts the bot up
 
@@ -34,10 +34,10 @@ function searchSpotify(message){
 }
 
 function searchAlbum(message,artistName, albumName){
-    spotifyApi.searchArtists(artistName).then(function(data){
+    spotifyApi.searchArtists(artistName,{limit: 50}).then(function(data){
         if(data.body.artists.total === 0) return false;
         data.body.artists.items.every(artist => {
-            spotifyApi.getArtistAlbums(artist.id).then(function(result){
+            spotifyApi.getArtistAlbums(artist.id,{limit: 50}).then(function(result){
                 if(result.body.items.length === 0) return false;
                 result.body.items.every(album => {
                     let regEx = new RegExp(albumName.toString(), 'gi');

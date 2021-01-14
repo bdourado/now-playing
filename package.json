@@ -1,0 +1,17 @@
+{
+  "name": "NowPlaying",
+  "version": "0.0.1",
+  "description": "App for discord bot to search and share a spotify album link in the current discord channel",
+  "main": "index.js",
+  "dependencies": {
+    "discord.js": "^12.5.1",
+    "dotenv": "^8.2.0",
+    "spotify-web-api-node": "^5.0.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Bruno Moura Dourado",
+  "license": "MIT"
+}

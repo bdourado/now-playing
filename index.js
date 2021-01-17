@@ -29,7 +29,6 @@ function searchSpotify(message){
     const search = message.content.substr(4);
     const artistName = search.split('-')[0].trim();
     const albumName = search.split('-')[1].replace(/\([^)]*\)/gi,"").trim();
-    console.log(albumName);
     
     searchAlbum(message, artistName,albumName);
 }

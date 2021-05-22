@@ -1,74 +1,107 @@
-require('dotenv').config(); //import dotenv 
-const Discord = require("discord.js"); // imports the discord library
-const client = new Discord.Client(); // creates a discord client
-const token = process.env.discord_token; // gets your token from the file
-const SPOTIFY_URL = 'https://open.spotify.com/album/'; // spotify album url prefix
+require('dotenv').config(); 
 
-client.once("ready", () => { // prints "Ready!" to the console once the bot is online
+const Discord = require("discord.js");
+const SpotifyWebApi = require('spotify-web-api-node');
+
+const client = new Discord.Client();
+const token = process.env.DISCORD_TOKEN;
+
+const SPOTIFY_URL = 'https://open.spotify.com/album/';
+
+client.once("ready", () => {
 	console.log("Ready!");
 });
 
-client.login(token); // starts the bot up
+client.login(token); 
 
-var SpotifyWebApi = require('spotify-web-api-node');
+client.on("message", async message => {
+    if (message.content[0] === '/') {
+        const search = message.content.substr(4);
 
-var spotifyApi = new SpotifyWebApi({
-    clientId: process.env.spotify_client_id,
-    clientSecret: process.env.spotify_client_secret,
+        await initializeSpotify();        
+        
+        const album = await searchSpotify(search)
+        
+        if(album){
+            const spotifyAlbumUrl = SPOTIFY_URL + album.id; 
+            message.channel.send(spotifyAlbumUrl); 
+        }
+        
+    }
 });
 
-spotifyApi.clientCredentialsGrant().then(
-    function(data) {
-        spotifyApi.setAccessToken(data.body['access_token']);
-    }
-);
-
-function searchSpotify(message){
-    if(message.length < 5) return false;
-
-    const search = message.content.substr(4);
+async function searchSpotify(search){
     const artistName = search.split('-')[0].trim();
     const albumName = search.split('-')[1].replace(/\([^)]*\)/gi,"").trim();
     
-    searchAlbum(message, artistName,albumName);
-}
+    let artist;
 
-function searchAlbum(message,artistName, albumName){
-    spotifyApi.searchArtists(artistName,{limit: 50}).then(function(data){
-        if(data.body.artists.total === 0) return false;
-        data.body.artists.items.every(artist => {
-            spotifyApi.getArtistAlbums(artist.id,{limit: 50}).then(function(result){
-                if(result.body.items.length === 0) return false;
-                result.body.items.every(album => {
-                    let regEx = new RegExp(albumName.toString(), 'gi');
-                    if(album.name.match(regEx)){
-                        generateSpotifyAlbumLinkByAlbumId(message,album.id)
-                        return false;
-                    }
-                    return true;
-                });
-            })            
-        });
-    });
-}
-
-function generateSpotifyAlbumLinkByAlbumId(message, id){
-    let albumLink = SPOTIFY_URL+id;
-    sendMessage(message, albumLink);
-}
-
-function sendMessage(message, text){
-    message.channel.send(text.toString()); 
-}
-
-let commands = new Map();
-commands.set("np", searchSpotify);
-
-client.on("message", message => {
-    if (message.content[0] === '/') {
-        const command = message.content.split(" ")[0].substr(1); // gets the command name
-        if (commands.has(command)) { // checks if the map contains the command
-            commands.get(command)(message) // runs the command
+    for(let i = 0; i < 10; i++){
+        let offSet = i * 50;
+        artist = await searchArtist(artistName, offSet);
+        if(artist){
+            break;
         }
     }
-});
+
+    if (artist){
+        for(let i = 0; i < 10; i++){
+            let offSet = i * 50;
+            album = await searchAlbum(artist, albumName, offSet);
+            if(album){
+                break;
+            }
+        }
+    }
+
+    if(album){
+        return album;
+    }
+
+    return null;
+}
+
+
+async function initializeSpotify(){
+    this.spotifyApi = new SpotifyWebApi({
+        clientId: process.env.SPOTIFY_KEY,
+        clientSecret: process.env.SPOTIFY_SECRET_KEY,
+    });
+
+    await this.spotifyApi.clientCredentialsGrant().then(
+        function(data) {
+            this.spotifyApi.setAccessToken(data.body.access_token);
+        }
+    );
+}
+
+async function searchArtist(artistName, offSet){
+    let foundArtist = null;
+
+    await this.spotifyApi.searchArtists(artistName,{limit: 50, offset: offSet}).then(function(data){
+        const artists = data.body.artists.items;
+        for (let artist of artists) {
+            if (artist.name.toLowerCase() === artistName.toLowerCase()){
+                foundArtist = artist;
+                break;
+            }
+        }
+    });
+
+    return foundArtist;
+}
+
+async function searchAlbum(artist, albumName, offSet){
+    let foundAlbum = null;
+
+    await this.spotifyApi.getArtistAlbums(artist.id,{limit: 50, offset: offSet, album_type: 'album'}).then(function(result){
+        const albuns = result.body.items;
+        for(let album of albuns){
+            if(album.name.replace(/ *\([^)]*\) */g, "").toLowerCase() === albumName.toLowerCase()){
+                foundAlbum = album;
+                break;
+            }
+        }
+    });
+    return foundAlbum;
+}

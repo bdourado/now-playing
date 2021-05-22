@@ -1,5 +1,6 @@
 require('dotenv').config(); 
 
+const keepAlive = require("./server")
 const Discord = require("discord.js");
 const SpotifyWebApi = require('spotify-web-api-node');
 
@@ -12,6 +13,7 @@ client.once("ready", () => {
 	console.log("Ready!");
 });
 
+keepAlive();
 client.login(token); 
 
 client.on("message", async message => {
